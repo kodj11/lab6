@@ -7,7 +7,7 @@ class NetAddress {
 private:
     uint32_t address{ 0 };
     uint32_t netmask{ 0 };
-
+    std::string straddress{}, strnetmask{};
     std::vector<uint8_t> split(std::string s, char delim) {
         std::vector<uint8_t> result;
         size_t pos = 0;
@@ -20,6 +20,7 @@ private:
     }
 
 public:
+
     NetAddress(std::string ip, std::string mask) {
 
         auto ips = split(ip, '.');
@@ -31,6 +32,17 @@ public:
         for (int i = 0; i < 4; ++i) {
             netmask |= (masks[i] << (i * 8));
         }
+    }
+
+    void getNetworkAddress() const {
+        uint32_t networkAddr = address & netmask;
+
+        // ff - ограничение на 8 бит
+        std::cout << (networkAddr & 0xFF) << "."
+            << (networkAddr >> 8 & 0xFF) << "."
+            << (networkAddr >> 16 & 0xFF) << "."
+            << (networkAddr >> 24);
+
     }
 
     NetAddress(uint32_t address, uint32_t netmask)
@@ -46,7 +58,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const NetAddress& na);
 
-
+    friend std::istream& operator>>(std::istream& os, NetAddress& na);
 };
 
 std::ostream& operator<<(std::ostream& os, const NetAddress& na) {
@@ -58,14 +70,26 @@ std::ostream& operator<<(std::ostream& os, const NetAddress& na) {
     return os;
 }
 
+std::istream& operator>>(std::istream& os, NetAddress& na) {
+    os >> na.straddress >> na.strnetmask;
+    na = NetAddress(na.straddress, na.strnetmask);
+    return os;
+}
+
 int main() {
     NetAddress ip("192.168.0.1", "255.255.255.0");
     NetAddress subnet = ip & ip;
 
     std::cout << "IP: " << ip << std::endl;
-    std::cout << "Subnet: " << subnet << std::endl;
+    std::cout << "Subnet: ";
+    ip.getNetworkAddress();
+    std::cout << std::endl;
 
     std::cout << "('192.168.0.1', '255.255.255.0') == ('192.168.0.1', '255.255.255.0') ? -> " << (ip == ip) << std::endl;
+
+    std::cout << "Vvod ip and mask: ";
+    std::cin >> ip;
+    std::cout << "You write: " << ip << std::endl;
 
     return 0;
 }
